@@ -1,24 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ClientOnly } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+const TerraWave = lazy(() => import("@/components/TerraWave"));
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Terra Wave — WebGL Wireframe Terrain Animation" },
+      {
+        name: "description",
+        content:
+          "An animated WebGL wireframe terrain that ripples toward a glowing horizon under a field of stars.",
+      },
+      { property: "og:title", content: "Terra Wave — WebGL Wireframe Terrain Animation" },
+      {
+        property: "og:description",
+        content: "Animated WebGL wireframe terrain waves with a glowing horizon and starfield.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="relative min-h-screen overflow-hidden bg-black">
+      <h1 className="sr-only">Terra Wave WebGL animation</h1>
+      <ClientOnly fallback={null}>
+        <Suspense fallback={null}>
+          <TerraWave />
+        </Suspense>
+      </ClientOnly>
+    </main>
   );
 }
