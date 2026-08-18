@@ -128,6 +128,7 @@ export default function TerraWave() {
         attribute float aPhase;
         attribute float aScale;
         varying float vTwinkle;
+        varying float vSpin;
 
         void main() {
           vec3 pos = position;
@@ -183,15 +184,11 @@ export default function TerraWave() {
 
     // ---- loop ----
     const clock = new THREE.Clock();
-    const gridStep = 2; // 240 / 120 -> wrap distance for seamless scroll
     let frame = 0;
     const render = () => {
       const t = clock.getElapsedTime();
       uniforms.uTime.value = t;
       starUniforms.uTime.value = t;
-
-      // terrain flows continuously toward the camera
-      terrain.position.z = -60 + ((t * 3.5) % gridStep);
 
       smooth.x += (pointer.x - smooth.x) * 0.05;
       smooth.y += (pointer.y - smooth.y) * 0.05;
