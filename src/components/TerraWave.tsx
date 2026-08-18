@@ -62,7 +62,7 @@ export default function TerraWave() {
           vec3 pos = position;
           // waves grow toward the horizon, floor stays flat-ish near camera
           float ridge = smoothstep(10.0, 90.0, -pos.z);
-          pos.y += wave(pos) * ridge * 1.6;
+          pos.y += wave(pos) * ridge * 2.6;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           vDepth = -mv.z;
@@ -77,7 +77,7 @@ export default function TerraWave() {
         varying float vFade;
 
         void main() {
-          vec3 col = mix(uNear, uFar, smoothstep(0.35, 1.0, vFade));
+          vec3 col = mix(uNear, uFar, smoothstep(0.55, 1.0, vFade));
           // fade out with distance so the horizon dissolves into black
           float a = 1.0 - smoothstep(40.0, 150.0, vDepth);
           a *= 0.35 + 0.65 * smoothstep(0.0, 0.6, vFade);
