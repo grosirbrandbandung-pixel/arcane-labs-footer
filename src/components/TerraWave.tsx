@@ -35,8 +35,8 @@ export default function TerraWave() {
 
     const uniforms = {
       uTime: { value: 0 },
-      uNear: { value: new THREE.Color(0x2ee6a8) },
-      uFar: { value: new THREE.Color(0xffffff) },
+      uLow: { value: new THREE.Color(0x2ee6a8) },
+      uHigh: { value: new THREE.Color(0xffffff) },
     };
 
     const material = new THREE.ShaderMaterial({
@@ -48,40 +48,42 @@ export default function TerraWave() {
       vertexShader: /* glsl */ `
         uniform float uTime;
         varying float vDepth;
-        varying float vFade;
+        varying float vHeight;
 
-        float wave(vec3 p) {
+        float wave(vec3 p, float breathe) {
           float h = 0.0;
-          h += sin(p.x * 0.14 + uTime * 0.55) * 0.9;
-          h += sin(p.z * 0.11 - uTime * 0.42) * 0.7;
-          h += sin((p.x + p.z) * 0.07 + uTime * 0.3) * 0.6;
-          return h;
+          h += sin(p.x * 0.13 + uTime * 0.5) * 0.9;
+          h += sin(p.z * 0.10 + uTime * 0.38) * 0.8;
+          h += sin((p.x + p.z) * 0.075 - uTime * 0.28) * 0.55;
+          h += sin((p.x - p.z) * 0.05 + uTime * 0.2) * 0.45;
+          return h * breathe;
         }
 
         void main() {
           vec3 pos = position;
-          // waves grow toward the horizon, floor stays flat-ish near camera
-          float ridge = smoothstep(10.0, 90.0, -pos.z);
-          pos.y += wave(pos) * ridge * 2.6;
+          // "breathing" amplitude — the whole surface swells and relaxes in place
+          float breathe = 0.75 + 0.35 * sin(uTime * 0.45);
+          float h = wave(pos, breathe);
+          pos.y += h * 2.2;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           vDepth = -mv.z;
-          vFade = ridge;
+          vHeight = h;
           gl_Position = projectionMatrix * mv;
         }
       `,
       fragmentShader: /* glsl */ `
-        uniform vec3 uNear;
-        uniform vec3 uFar;
+        uniform vec3 uLow;
+        uniform vec3 uHigh;
         varying float vDepth;
-        varying float vFade;
+        varying float vHeight;
 
         void main() {
-          vec3 col = mix(uNear, uFar, smoothstep(0.55, 1.0, vFade));
-          // fade out with distance so the horizon dissolves into black
-          float a = 1.0 - smoothstep(40.0, 150.0, vDepth);
-          a *= 0.35 + 0.65 * smoothstep(0.0, 0.6, vFade);
-          gl_FragColor = vec4(col, a * 0.9);
+          // crests read white, troughs keep the mint tint
+          float t = smoothstep(-0.4, 1.4, vHeight);
+          vec3 col = mix(uLow, uHigh, t);
+          float a = 1.0 - smoothstep(50.0, 160.0, vDepth);
+          gl_FragColor = vec4(col, a * (0.55 + 0.45 * t));
         }
       `,
     });
