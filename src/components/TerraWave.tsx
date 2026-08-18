@@ -131,22 +131,38 @@ export default function TerraWave() {
 
         void main() {
           vec3 pos = position;
-          // gentle drifting so nothing in the sky is ever static
-          pos.x += sin(uTime * 0.25 + aPhase) * 2.2;
-          pos.y += cos(uTime * 0.2 + aPhase * 1.7) * 1.4;
-          pos.z += mod(uTime * 3.0 + aPhase * 12.0, 200.0);
-          pos.z = mod(pos.z + 200.0, 200.0) - 200.0;
+
+          // forward travel toward the viewer, wrapping seamlessly
+          float span = 200.0;
+          pos.z = mod(pos.z + uTime * 6.0 + aPhase * 20.0, span) - span;
+
+          // orbital sweep around the sky centre
+          float ang = uTime * 0.05 + aPhase * 0.15;
+          float ca = cos(ang);
+          float sa = sin(ang);
+          vec2 c = vec2(0.0, -90.0);
+          vec2 rel = vec2(pos.x, pos.z) - c;
+          pos.xz = c + vec2(rel.x * ca - rel.y * sa, rel.x * sa + rel.y * ca);
+          pos.y += sin(uTime * 0.35 + aPhase * 2.0) * 2.0;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = max(1.5, aScale * 220.0 * uPixelRatio / -mv.z);
+          gl_PointSize = max(1.5, aScale * 260.0 * uPixelRatio / -mv.z);
           vTwinkle = 0.45 + 0.55 * (0.5 + 0.5 * sin(uTime * 2.0 + aPhase * 3.0));
+          vSpin = uTime * 0.8 + aPhase * 4.0;
         }
       `,
       fragmentShader: /* glsl */ `
         uniform vec3 uColor;
         varying float vTwinkle;
+        varying float vSpin;
         void main() {
+          // spinning square sprite
+          vec2 uv = gl_PointCoord - 0.5;
+          float c = cos(vSpin);
+          float s = sin(vSpin);
+          vec2 r = vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
+          if (max(abs(r.x), abs(r.y)) > 0.33) discard;
           gl_FragColor = vec4(uColor, vTwinkle);
         }
       `,
