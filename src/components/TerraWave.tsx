@@ -21,8 +21,8 @@ export default function TerraWave() {
       0.1,
       400,
     );
-    camera.position.set(0, 2.2, 14);
-    camera.lookAt(0, 2.0, -60);
+    camera.position.set(0, 3.4, 14);
+    camera.lookAt(0, 3.2, -60);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -30,7 +30,7 @@ export default function TerraWave() {
     container.appendChild(renderer.domElement);
 
     // ---- terrain ----
-    const geometry = new THREE.PlaneGeometry(240, 240, 120, 120);
+    const geometry = new THREE.PlaneGeometry(200, 220, 150, 150);
     geometry.rotateX(-Math.PI / 2);
 
     const uniforms = {
@@ -52,10 +52,10 @@ export default function TerraWave() {
 
         float wave(vec3 p, float breathe) {
           float h = 0.0;
-          h += sin(p.x * 0.13 + uTime * 0.5) * 0.9;
-          h += sin(p.z * 0.10 + uTime * 0.38) * 0.8;
-          h += sin((p.x + p.z) * 0.075 - uTime * 0.28) * 0.55;
-          h += sin((p.x - p.z) * 0.05 + uTime * 0.2) * 0.45;
+          h += sin(p.x * 0.22 + uTime * 0.5) * 0.9;
+          h += sin(p.z * 0.18 + uTime * 0.38) * 0.8;
+          h += sin((p.x + p.z) * 0.13 - uTime * 0.28) * 0.55;
+          h += sin((p.x - p.z) * 0.09 + uTime * 0.2) * 0.45;
           return h * breathe;
         }
 
@@ -64,7 +64,7 @@ export default function TerraWave() {
           // "breathing" amplitude — the whole surface swells and relaxes in place
           float breathe = 0.75 + 0.35 * sin(uTime * 0.45);
           float h = wave(pos, breathe);
-          pos.y += h * 2.2;
+          pos.y += h * 1.15;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           vDepth = -mv.z;
@@ -193,9 +193,9 @@ export default function TerraWave() {
       smooth.x += (pointer.x - smooth.x) * 0.05;
       smooth.y += (pointer.y - smooth.y) * 0.05;
       camera.position.x = smooth.x * 2.6;
-      camera.position.y = 2.2 - smooth.y * 0.9;
+      camera.position.y = 3.4 - smooth.y * 0.9;
       camera.rotation.z = -smooth.x * 0.02;
-      camera.lookAt(smooth.x * 5, 2.0 - smooth.y * 1.6, -60);
+      camera.lookAt(smooth.x * 5, 3.2 - smooth.y * 1.6, -60);
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
