@@ -35,8 +35,9 @@ export default function TerraWave() {
 
     const uniforms = {
       uTime: { value: 0 },
-      uLow: { value: new THREE.Color(0x2ee6a8) },
+      uLow: { value: new THREE.Color(0xe8f6f2) },
       uHigh: { value: new THREE.Color(0xffffff) },
+
     };
 
     const material = new THREE.ShaderMaterial({
