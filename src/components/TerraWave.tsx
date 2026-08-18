@@ -21,8 +21,8 @@ export default function TerraWave() {
       0.1,
       400,
     );
-    camera.position.set(0, 3.4, 14);
-    camera.lookAt(0, 3.2, -60);
+    camera.position.set(0, 8.5, 16);
+    camera.lookAt(0, 6.5, -60);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -193,9 +193,9 @@ export default function TerraWave() {
       smooth.x += (pointer.x - smooth.x) * 0.05;
       smooth.y += (pointer.y - smooth.y) * 0.05;
       camera.position.x = smooth.x * 2.6;
-      camera.position.y = 3.4 - smooth.y * 0.9;
+      camera.position.y = 8.5 - smooth.y * 1.4;
       camera.rotation.z = -smooth.x * 0.02;
-      camera.lookAt(smooth.x * 5, 3.2 - smooth.y * 1.6, -60);
+      camera.lookAt(smooth.x * 5, 6.5 - smooth.y * 2.0, -60);
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
