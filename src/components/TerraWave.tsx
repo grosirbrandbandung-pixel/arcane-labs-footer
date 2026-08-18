@@ -52,19 +52,20 @@ export default function TerraWave() {
 
         float wave(vec3 p, float breathe) {
           float h = 0.0;
-          h += sin(p.x * 0.22 + uTime * 0.5) * 0.9;
-          h += sin(p.z * 0.18 + uTime * 0.38) * 0.8;
-          h += sin((p.x + p.z) * 0.13 - uTime * 0.28) * 0.55;
-          h += sin((p.x - p.z) * 0.09 + uTime * 0.2) * 0.45;
+          h += sin(p.x * 0.13 + uTime * 0.30) * 0.9;
+          h += sin(p.z * 0.10 + uTime * 0.22) * 0.7;
+          h += sin((p.x + p.z) * 0.07 - uTime * 0.16) * 0.4;
+          h += sin((p.x - p.z) * 0.05 + uTime * 0.12) * 0.3;
           return h * breathe;
         }
 
         void main() {
           vec3 pos = position;
-          // "breathing" amplitude — the whole surface swells and relaxes in place
-          float breathe = 0.75 + 0.35 * sin(uTime * 0.45);
+          // subtle "breathing" — the floor undulates gently in place
+          float breathe = 0.92 + 0.12 * sin(uTime * 0.3);
           float h = wave(pos, breathe);
-          pos.y += h * 0.8;
+          pos.y += h * 0.32;
+
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           vDepth = -mv.z;
