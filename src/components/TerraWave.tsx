@@ -98,25 +98,90 @@ export default function TerraWave() {
       starPos[i * 3 + 1] = 6 + Math.random() * 70;
       starPos[i * 3 + 2] = -Math.random() * 200;
     }
+    const starPhase = new Float32Array(starCount);
+    const starScale = new Float32Array(starCount);
+    for (let i = 0; i < starCount; i++) {
+      starPhase[i] = Math.random() * Math.PI * 2;
+      starScale[i] = 0.5 + Math.random() * 1.6;
+    }
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    const stars = new THREE.Points(
-      starGeo,
-      new THREE.PointsMaterial({
-        color: 0x39f0ab,
-        size: 0.45,
-        sizeAttenuation: true,
-        transparent: true,
-        opacity: 0.75,
-      }),
-    );
+    starGeo.setAttribute("aPhase", new THREE.BufferAttribute(starPhase, 1));
+    starGeo.setAttribute("aScale", new THREE.BufferAttribute(starScale, 1));
+
+    const starUniforms = {
+      uTime: { value: 0 },
+      uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+      uColor: { value: new THREE.Color(0x39f0ab) },
+    };
+
+    const starMaterial = new THREE.ShaderMaterial({
+      uniforms: starUniforms,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexShader: /* glsl */ `
+        uniform float uTime;
+        uniform float uPixelRatio;
+        attribute float aPhase;
+        attribute float aScale;
+        varying float vTwinkle;
+
+        void main() {
+          vec3 pos = position;
+          // gentle drifting so nothing in the sky is ever static
+          pos.x += sin(uTime * 0.25 + aPhase) * 2.2;
+          pos.y += cos(uTime * 0.2 + aPhase * 1.7) * 1.4;
+          pos.z += mod(uTime * 3.0 + aPhase * 12.0, 200.0);
+          pos.z = mod(pos.z + 200.0, 200.0) - 200.0;
+
+          vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+          gl_Position = projectionMatrix * mv;
+          gl_PointSize = max(1.5, aScale * 220.0 * uPixelRatio / -mv.z);
+          vTwinkle = 0.45 + 0.55 * (0.5 + 0.5 * sin(uTime * 2.0 + aPhase * 3.0));
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform vec3 uColor;
+        varying float vTwinkle;
+        void main() {
+          gl_FragColor = vec4(uColor, vTwinkle);
+        }
+      `,
+    });
+
+    const stars = new THREE.Points(starGeo, starMaterial);
     scene.add(stars);
+
+    // ---- mouse parallax ----
+    const pointer = { x: 0, y: 0 };
+    const smooth = { x: 0, y: 0 };
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = container.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+    };
+    window.addEventListener("pointermove", onPointerMove);
 
     // ---- loop ----
     const clock = new THREE.Clock();
+    const gridStep = 2; // 240 / 120 -> wrap distance for seamless scroll
     let frame = 0;
     const render = () => {
-      uniforms.uTime.value = clock.getElapsedTime();
+      const t = clock.getElapsedTime();
+      uniforms.uTime.value = t;
+      starUniforms.uTime.value = t;
+
+      // terrain flows continuously toward the camera
+      terrain.position.z = -60 + ((t * 3.5) % gridStep);
+
+      smooth.x += (pointer.x - smooth.x) * 0.05;
+      smooth.y += (pointer.y - smooth.y) * 0.05;
+      camera.position.x = smooth.x * 2.6;
+      camera.position.y = 2.2 - smooth.y * 0.9;
+      camera.rotation.z = -smooth.x * 0.02;
+      camera.lookAt(smooth.x * 5, 2.0 - smooth.y * 1.6, -60);
+
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
     };
@@ -128,16 +193,18 @@ export default function TerraWave() {
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      starUniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
     };
     window.addEventListener("resize", onResize);
 
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("pointermove", onPointerMove);
       geometry.dispose();
       material.dispose();
       starGeo.dispose();
-      (stars.material as THREE.Material).dispose();
+      starMaterial.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
