@@ -119,7 +119,7 @@ export default function TerraWave() {
     const starUniforms = {
       uTime: { value: 0 },
       uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-      uColor: { value: new THREE.Color(0x39f0ab) },
+      uColor: { value: new THREE.Color(0xffffff) },
     };
 
     const starMaterial = new THREE.ShaderMaterial({
