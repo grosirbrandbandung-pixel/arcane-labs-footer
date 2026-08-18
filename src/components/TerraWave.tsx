@@ -21,8 +21,8 @@ export default function TerraWave() {
       0.1,
       400,
     );
-    camera.position.set(0, 13, 34);
-    camera.lookAt(0, 7.5, -60);
+    camera.position.set(0, 9, 26);
+    camera.lookAt(0, 5.5, -60);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -30,7 +30,7 @@ export default function TerraWave() {
     container.appendChild(renderer.domElement);
 
     // ---- terrain ----
-    const geometry = new THREE.PlaneGeometry(200, 220, 150, 150);
+    const geometry = new THREE.PlaneGeometry(220, 240, 210, 210);
     geometry.rotateX(-Math.PI / 2);
 
     const uniforms = {
@@ -64,7 +64,7 @@ export default function TerraWave() {
           // "breathing" amplitude — the whole surface swells and relaxes in place
           float breathe = 0.75 + 0.35 * sin(uTime * 0.45);
           float h = wave(pos, breathe);
-          pos.y += h * 1.15;
+          pos.y += h * 0.8;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           vDepth = -mv.z;
@@ -193,9 +193,9 @@ export default function TerraWave() {
       smooth.x += (pointer.x - smooth.x) * 0.05;
       smooth.y += (pointer.y - smooth.y) * 0.05;
       camera.position.x = smooth.x * 2.6;
-      camera.position.y = 13 - smooth.y * 2.0;
+      camera.position.y = 9 - smooth.y * 1.6;
       camera.rotation.z = -smooth.x * 0.02;
-      camera.lookAt(smooth.x * 6, 7.5 - smooth.y * 2.5, -60);
+      camera.lookAt(smooth.x * 6, 5.5 - smooth.y * 2.2, -60);
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
