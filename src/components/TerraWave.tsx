@@ -137,7 +137,7 @@ export default function TerraWave() {
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = aScale * 5.0 * uPixelRatio * (14.0 / -mv.z);
+          gl_PointSize = max(1.5, aScale * 220.0 * uPixelRatio / -mv.z);
           vTwinkle = 0.45 + 0.55 * (0.5 + 0.5 * sin(uTime * 2.0 + aPhase * 3.0));
         }
       `,
@@ -145,7 +145,7 @@ export default function TerraWave() {
         uniform vec3 uColor;
         varying float vTwinkle;
         void main() {
-          gl_FragColor = vec4(uColor, vTwinkle * 0.85);
+          gl_FragColor = vec4(uColor, vTwinkle);
         }
       `,
     });
