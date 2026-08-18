@@ -16,13 +16,13 @@ export default function TerraWave() {
     scene.background = new THREE.Color(0x000000);
 
     const camera = new THREE.PerspectiveCamera(
-      55,
+      48,
       container.clientWidth / container.clientHeight,
       0.1,
       400,
     );
-    camera.position.set(0, 2.2, 14);
-    camera.lookAt(0, 2.0, -60);
+    camera.position.set(0, 9, 26);
+    camera.lookAt(0, 5.5, -60);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -30,13 +30,13 @@ export default function TerraWave() {
     container.appendChild(renderer.domElement);
 
     // ---- terrain ----
-    const geometry = new THREE.PlaneGeometry(240, 240, 120, 120);
+    const geometry = new THREE.PlaneGeometry(220, 240, 210, 210);
     geometry.rotateX(-Math.PI / 2);
 
     const uniforms = {
       uTime: { value: 0 },
-      uNear: { value: new THREE.Color(0x2ee6a8) },
-      uFar: { value: new THREE.Color(0xffffff) },
+      uLow: { value: new THREE.Color(0x2ee6a8) },
+      uHigh: { value: new THREE.Color(0xffffff) },
     };
 
     const material = new THREE.ShaderMaterial({
@@ -48,40 +48,42 @@ export default function TerraWave() {
       vertexShader: /* glsl */ `
         uniform float uTime;
         varying float vDepth;
-        varying float vFade;
+        varying float vHeight;
 
-        float wave(vec3 p) {
+        float wave(vec3 p, float breathe) {
           float h = 0.0;
-          h += sin(p.x * 0.14 + uTime * 0.55) * 0.9;
-          h += sin(p.z * 0.11 - uTime * 0.42) * 0.7;
-          h += sin((p.x + p.z) * 0.07 + uTime * 0.3) * 0.6;
-          return h;
+          h += sin(p.x * 0.22 + uTime * 0.5) * 0.9;
+          h += sin(p.z * 0.18 + uTime * 0.38) * 0.8;
+          h += sin((p.x + p.z) * 0.13 - uTime * 0.28) * 0.55;
+          h += sin((p.x - p.z) * 0.09 + uTime * 0.2) * 0.45;
+          return h * breathe;
         }
 
         void main() {
           vec3 pos = position;
-          // waves grow toward the horizon, floor stays flat-ish near camera
-          float ridge = smoothstep(10.0, 90.0, -pos.z);
-          pos.y += wave(pos) * ridge * 2.6;
+          // "breathing" amplitude — the whole surface swells and relaxes in place
+          float breathe = 0.75 + 0.35 * sin(uTime * 0.45);
+          float h = wave(pos, breathe);
+          pos.y += h * 0.8;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           vDepth = -mv.z;
-          vFade = ridge;
+          vHeight = h;
           gl_Position = projectionMatrix * mv;
         }
       `,
       fragmentShader: /* glsl */ `
-        uniform vec3 uNear;
-        uniform vec3 uFar;
+        uniform vec3 uLow;
+        uniform vec3 uHigh;
         varying float vDepth;
-        varying float vFade;
+        varying float vHeight;
 
         void main() {
-          vec3 col = mix(uNear, uFar, smoothstep(0.55, 1.0, vFade));
-          // fade out with distance so the horizon dissolves into black
-          float a = 1.0 - smoothstep(40.0, 150.0, vDepth);
-          a *= 0.35 + 0.65 * smoothstep(0.0, 0.6, vFade);
-          gl_FragColor = vec4(col, a * 0.9);
+          // crests read white, troughs keep the mint tint
+          float t = smoothstep(-0.4, 1.4, vHeight);
+          vec3 col = mix(uLow, uHigh, t);
+          float a = 1.0 - smoothstep(50.0, 160.0, vDepth);
+          gl_FragColor = vec4(col, a * (0.55 + 0.45 * t));
         }
       `,
     });
@@ -126,25 +128,42 @@ export default function TerraWave() {
         attribute float aPhase;
         attribute float aScale;
         varying float vTwinkle;
+        varying float vSpin;
 
         void main() {
           vec3 pos = position;
-          // gentle drifting so nothing in the sky is ever static
-          pos.x += sin(uTime * 0.25 + aPhase) * 2.2;
-          pos.y += cos(uTime * 0.2 + aPhase * 1.7) * 1.4;
-          pos.z += mod(uTime * 3.0 + aPhase * 12.0, 200.0);
-          pos.z = mod(pos.z + 200.0, 200.0) - 200.0;
+
+          // forward travel toward the viewer, wrapping seamlessly
+          float span = 200.0;
+          pos.z = mod(pos.z + uTime * 6.0 + aPhase * 20.0, span) - span;
+
+          // orbital sweep around the sky centre
+          float ang = uTime * 0.05 + aPhase * 0.15;
+          float ca = cos(ang);
+          float sa = sin(ang);
+          vec2 c = vec2(0.0, -90.0);
+          vec2 rel = vec2(pos.x, pos.z) - c;
+          pos.xz = c + vec2(rel.x * ca - rel.y * sa, rel.x * sa + rel.y * ca);
+          pos.y += sin(uTime * 0.35 + aPhase * 2.0) * 2.0;
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = max(1.5, aScale * 220.0 * uPixelRatio / -mv.z);
+          gl_PointSize = max(1.5, aScale * 260.0 * uPixelRatio / -mv.z);
           vTwinkle = 0.45 + 0.55 * (0.5 + 0.5 * sin(uTime * 2.0 + aPhase * 3.0));
+          vSpin = uTime * 0.8 + aPhase * 4.0;
         }
       `,
       fragmentShader: /* glsl */ `
         uniform vec3 uColor;
         varying float vTwinkle;
+        varying float vSpin;
         void main() {
+          // spinning square sprite
+          vec2 uv = gl_PointCoord - 0.5;
+          float c = cos(vSpin);
+          float s = sin(vSpin);
+          vec2 r = vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
+          if (max(abs(r.x), abs(r.y)) > 0.33) discard;
           gl_FragColor = vec4(uColor, vTwinkle);
         }
       `,
@@ -165,22 +184,18 @@ export default function TerraWave() {
 
     // ---- loop ----
     const clock = new THREE.Clock();
-    const gridStep = 2; // 240 / 120 -> wrap distance for seamless scroll
     let frame = 0;
     const render = () => {
       const t = clock.getElapsedTime();
       uniforms.uTime.value = t;
       starUniforms.uTime.value = t;
 
-      // terrain flows continuously toward the camera
-      terrain.position.z = -60 + ((t * 3.5) % gridStep);
-
       smooth.x += (pointer.x - smooth.x) * 0.05;
       smooth.y += (pointer.y - smooth.y) * 0.05;
       camera.position.x = smooth.x * 2.6;
-      camera.position.y = 2.2 - smooth.y * 0.9;
+      camera.position.y = 9 - smooth.y * 1.6;
       camera.rotation.z = -smooth.x * 0.02;
-      camera.lookAt(smooth.x * 5, 2.0 - smooth.y * 1.6, -60);
+      camera.lookAt(smooth.x * 6, 5.5 - smooth.y * 2.2, -60);
 
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
