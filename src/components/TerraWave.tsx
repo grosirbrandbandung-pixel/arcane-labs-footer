@@ -57,6 +57,8 @@ export default function TerraWave() {
           h += sin(p.z * 0.10 + uTime * 0.22) * 0.7;
           h += sin((p.x + p.z) * 0.07 - uTime * 0.16) * 0.4;
           h += sin((p.x - p.z) * 0.05 + uTime * 0.12) * 0.3;
+          // bowl-like depressions carved into the surface
+          h -= pow(abs(sin(p.x * 0.055 + uTime * 0.1) * sin(p.z * 0.045 - uTime * 0.08)), 0.7) * 1.1;
           return h * breathe;
         }
 
@@ -65,7 +67,8 @@ export default function TerraWave() {
           // subtle "breathing" — the floor undulates gently in place
           float breathe = 0.92 + 0.12 * sin(uTime * 0.3);
           float h = wave(pos, breathe);
-          pos.y += h * 0.32;
+          pos.y += h * 0.5;
+
 
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
