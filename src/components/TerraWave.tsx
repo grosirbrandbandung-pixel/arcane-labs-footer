@@ -35,8 +35,9 @@ export default function TerraWave() {
 
     const uniforms = {
       uTime: { value: 0 },
-      uLow: { value: new THREE.Color(0x2ee6a8) },
+      uLow: { value: new THREE.Color(0xe8f6f2) },
       uHigh: { value: new THREE.Color(0xffffff) },
+
     };
 
     const material = new THREE.ShaderMaterial({
@@ -56,6 +57,8 @@ export default function TerraWave() {
           h += sin(p.z * 0.10 + uTime * 0.22) * 0.7;
           h += sin((p.x + p.z) * 0.07 - uTime * 0.16) * 0.4;
           h += sin((p.x - p.z) * 0.05 + uTime * 0.12) * 0.3;
+          // bowl-like depressions carved into the surface
+          h -= pow(abs(sin(p.x * 0.055 + uTime * 0.1) * sin(p.z * 0.045 - uTime * 0.08)), 0.7) * 1.1;
           return h * breathe;
         }
 
@@ -64,7 +67,8 @@ export default function TerraWave() {
           // subtle "breathing" — the floor undulates gently in place
           float breathe = 0.92 + 0.12 * sin(uTime * 0.3);
           float h = wave(pos, breathe);
-          pos.y += h * 0.32;
+          pos.y += h * 0.5;
+
 
 
           vec4 mv = modelViewMatrix * vec4(pos, 1.0);
@@ -115,7 +119,7 @@ export default function TerraWave() {
     const starUniforms = {
       uTime: { value: 0 },
       uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
-      uColor: { value: new THREE.Color(0x39f0ab) },
+      uColor: { value: new THREE.Color(0xffffff) },
     };
 
     const starMaterial = new THREE.ShaderMaterial({
